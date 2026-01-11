@@ -27,7 +27,9 @@ This project contains a Windows Task Scheduler task that automatically shuts dow
    Open PowerShell as Administrator and run:
    ```powershell
    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"C:\Scripts\Check-IdleAndShutdown.ps1`""
-   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration ([TimeSpan]::MaxValue)
+   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date)
+   $trigger.Repetition.Interval = "PT5M"
+   $trigger.Repetition.Duration = ""
    $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Highest
    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -DontStopOnIdleEnd
    Register-ScheduledTask -TaskName "Idle Shutdown Monitor" -Action $action -Trigger $trigger -Principal $principal -Settings $settings

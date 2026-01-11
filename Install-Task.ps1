@@ -47,8 +47,10 @@ Write-Host "Registering scheduled task..." -ForegroundColor Yellow
 # Create the task action
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"$scriptPath`""
 
-# Create the trigger (every 5 minutes)
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration ([TimeSpan]::MaxValue)
+# Create the trigger (every 5 minutes, indefinitely)
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date)
+$trigger.Repetition.Interval = "PT5M"  # Repeat every 5 minutes
+$trigger.Repetition.Duration = ""      # Empty string means indefinitely
 
 # Create the principal (run as current user with highest privileges)
 $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Highest

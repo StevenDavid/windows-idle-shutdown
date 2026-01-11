@@ -46,7 +46,9 @@ If you prefer to fix it manually:
 4. Run this PowerShell command as Administrator:
    ```powershell
    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"C:\Scripts\Check-IdleAndShutdown.ps1`""
-   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration ([TimeSpan]::MaxValue)
+   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date)
+   $trigger.Repetition.Interval = "PT5M"
+   $trigger.Repetition.Duration = ""
    $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Highest
    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -DontStopOnIdleEnd
    Register-ScheduledTask -TaskName "Idle Shutdown Monitor" -Action $action -Trigger $trigger -Principal $principal -Settings $settings
