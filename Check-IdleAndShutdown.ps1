@@ -24,7 +24,9 @@ public class IdleTimeChecker {
         lastInputInfo.cbSize = (uint)Marshal.SizeOf(lastInputInfo);
         
         if (GetLastInputInfo(ref lastInputInfo)) {
-            return ((uint)Environment.TickCount - lastInputInfo.dwTime);
+            uint currentTickCount = GetTickCount();
+            uint idleTime = currentTickCount - lastInputInfo.dwTime;
+            return idleTime;
         }
         return 0;
     }
