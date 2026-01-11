@@ -19,6 +19,9 @@ public class IdleTimeChecker {
     [DllImport("user32.dll")]
     public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
 
+    [DllImport("kernel32.dll")]
+    public static extern uint GetTickCount();
+
     public static uint GetIdleTime() {
         LASTINPUTINFO lastInputInfo = new LASTINPUTINFO();
         lastInputInfo.cbSize = (uint)Marshal.SizeOf(lastInputInfo);
