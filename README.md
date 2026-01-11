@@ -22,18 +22,18 @@ This project contains a Windows Task Scheduler task that automatically shuts dow
    Copy-Item "Check-IdleAndShutdown.ps1" -Destination "C:\Scripts\"
    ```
 
-2. **Import the task into Task Scheduler:**
-   
+2. **Create and register the scheduled task:**
+
    Open PowerShell as Administrator and run:
    ```powershell
-   Register-ScheduledTask -Xml (Get-Content "IdleShutdownTask.xml" | Out-String) -TaskName "Idle Shutdown Monitor"
+   $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"C:\Scripts\Check-IdleAndShutdown.ps1`""
+   $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration ([TimeSpan]::MaxValue)
+   $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Highest
+   $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -DontStopOnIdleEnd
+   Register-ScheduledTask -TaskName "Idle Shutdown Monitor" -Action $action -Trigger $trigger -Principal $principal -Settings $settings
    ```
 
-   Or use Task Scheduler GUI:
-   - Open Task Scheduler (taskschd.msc)
-   - Click "Import Task..." in the Actions pane
-   - Browse to and select `IdleShutdownTask.xml`
-   - Click OK
+   **IMPORTANT**: The task must run as your user account (not SYSTEM) to detect your keyboard/mouse input.
 
 ### Method 2: Using Installation Script
 
@@ -94,7 +94,18 @@ Run as Administrator:
 
 ## Testing
 
-To test without actually shutting down:
+### Test Idle Detection
+
+Run the test script to verify idle detection is working:
+```powershell
+.\Test-IdleDetection.ps1
+```
+
+This will monitor your idle time for 60 seconds. Move your mouse or type to verify the idle time resets to 0.
+
+### Test Without Shutting Down
+
+To test the full script without actually shutting down:
 
 1. Edit `Check-IdleAndShutdown.ps1`
 2. Comment out the `Stop-Computer` line:
@@ -105,14 +116,42 @@ To test without actually shutting down:
    ```powershell
    Add-Content -Path $logPath -Value "$timestamp - TEST MODE: Would shutdown now"
    ```
-4. Check the log file at `C:\Scripts\idle-check.log` to verify it's working
+4. Run the script manually:
+   ```powershell
+   .\Check-IdleAndShutdown.ps1
+   ```
+5. Check the log file at `C:\Scripts\idle-check.log` to verify it's working
 
 ## Troubleshooting
+
+### Computer shuts down even when active
+
+**This is usually caused by the task running as SYSTEM instead of your user account.**
+
+**Quick Fix:**
+```powershell
+# Run the diagnostic script
+.\Diagnose-Task.ps1
+
+# If it shows the task is running as SYSTEM, reinstall:
+.\Install-Task.ps1
+```
+
+**For detailed troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
+
+The diagnostic script will check:
+- ✓ Task runs as your user account (not SYSTEM)
+- ✓ Task has elevated privileges
+- ✓ Idle detection is working correctly
+- ✓ Script and log files exist
+
+### Other Issues
 
 - **Task doesn't run**: Ensure the task is enabled in Task Scheduler and running with highest privileges
 - **Script errors**: Check the log file at `C:\Scripts\idle-check.log`
 - **Permissions**: The task must run as SYSTEM or with Administrator privileges to shutdown the computer
 - **Execution Policy**: The task uses `-ExecutionPolicy Bypass` to avoid script execution restrictions
+- **Log file not created**: Ensure the script has write permissions to `C:\Scripts\`
 
 ## Security Notes
 

@@ -43,8 +43,21 @@ if ($existingTask) {
 
 # Register the scheduled task
 Write-Host "Registering scheduled task..." -ForegroundColor Yellow
-$taskXml = Get-Content $taskXmlPath | Out-String
-Register-ScheduledTask -Xml $taskXml -TaskName $taskName | Out-Null
+
+# Create the task action
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"$scriptPath`""
+
+# Create the trigger (every 5 minutes)
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration ([TimeSpan]::MaxValue)
+
+# Create the principal (run as current user with highest privileges)
+$principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Highest
+
+# Create the settings
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Minutes 1)
+
+# Register the task
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
 
 Write-Host "`nInstallation complete!" -ForegroundColor Green
 Write-Host "`nTask Details:" -ForegroundColor Cyan
