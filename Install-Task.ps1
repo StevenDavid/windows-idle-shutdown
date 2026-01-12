@@ -44,8 +44,15 @@ if ($existingTask) {
 # Register the scheduled task
 Write-Host "Registering scheduled task..." -ForegroundColor Yellow
 
-# Create the task action
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -NonInteractive -File `"$scriptPath`""
+# Create the task action using VBScript wrapper to hide the window completely
+$vbsWrapperPath = Join-Path $scriptDestination "RunHidden.vbs"
+$vbsContent = @"
+Set objShell = CreateObject("WScript.Shell")
+objShell.Run "powershell.exe -ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -NonInteractive -File ""$scriptPath""", 0, False
+"@
+Set-Content -Path $vbsWrapperPath -Value $vbsContent -Force
+
+$action = New-ScheduledTaskAction -Execute "wscript.exe" -Argument "`"$vbsWrapperPath`" //B //Nologo"
 
 # Create the trigger (every 5 minutes, indefinitely)
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
@@ -63,6 +70,7 @@ Write-Host "`nInstallation complete!" -ForegroundColor Green
 Write-Host "`nTask Details:" -ForegroundColor Cyan
 Write-Host "  - Task Name: $taskName"
 Write-Host "  - Script Location: $scriptPath"
+Write-Host "  - VBS Wrapper: $vbsWrapperPath (runs PowerShell hidden)"
 Write-Host "  - Log File: C:\Scripts\idle-check.log"
 Write-Host "  - Check Frequency: Every 5 minutes"
 Write-Host "  - Idle Threshold: 30 minutes"

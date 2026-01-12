@@ -10,6 +10,7 @@ Write-Host "Uninstalling Idle Shutdown Monitor..." -ForegroundColor Cyan
 
 $taskName = "Idle Shutdown Monitor"
 $scriptPath = "C:\Scripts\Check-IdleAndShutdown.ps1"
+$vbsWrapperPath = "C:\Scripts\RunHidden.vbs"
 $logPath = "C:\Scripts\idle-check.log"
 
 # Check if task exists
@@ -29,7 +30,12 @@ if ($removeFiles -eq 'Y' -or $removeFiles -eq 'y') {
         Write-Host "Removing $scriptPath..." -ForegroundColor Yellow
         Remove-Item $scriptPath -Force
     }
-    
+
+    if (Test-Path $vbsWrapperPath) {
+        Write-Host "Removing $vbsWrapperPath..." -ForegroundColor Yellow
+        Remove-Item $vbsWrapperPath -Force
+    }
+
     if (Test-Path $logPath) {
         Write-Host "Removing $logPath..." -ForegroundColor Yellow
         Remove-Item $logPath -Force
